@@ -1,0 +1,18 @@
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: balcony-api
+spec:
+  rules:
+    - host: balcony-api.{{ .Values.cardano.network }}.dandelion.link
+      http:
+        paths:
+          - backend:
+              serviceName: balcony-api
+              servicePort: 80
+            path: /
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+    - hosts:
+        - balcony-api.{{ .Values.cardano.network }}.dandelion.link

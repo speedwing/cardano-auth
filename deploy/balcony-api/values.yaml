@@ -1,0 +1,6 @@
+image:
+  repository: "gimbalabs/balcony-api"
+  tag: "0.0.9"
+
+cardano:
+  network: testnet

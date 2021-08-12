@@ -1,0 +1,7 @@
+---
+gimbalabs:
+  cardano-auth:
+    play_2_x_json:
+    - api/app/generated/model/GimbalabsCardanoAuthV0Models.scala
+    play_2_x_routes:
+    - api/conf/routes

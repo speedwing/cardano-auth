@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: balcony-api
+  labels:
+    app: balcony-api
+spec:
+  selector:
+    app: balcony-api
+  ports:
+    - protocol: TCP
+      name: api
+      port: 80
+      targetPort: api

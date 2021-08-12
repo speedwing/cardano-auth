@@ -1,0 +1,143 @@
+{
+  "name": "cardano-auth",
+  "base_url": "https://cardano-auth.mainnet.dandelion.link",
+  "enums": {
+  },
+  "models": {
+    "message": {
+      "fields": [
+        {
+          "name": "message",
+          "type": "string"
+        }
+      ]
+    },
+    "auth": {
+      "plural": "auth",
+      "fields": [
+        {
+          "name": "message",
+          "type": "string"
+        },
+        {
+          "name": "signed_message",
+          "type": "string"
+        },
+        {
+          "name": "public_key_hex",
+          "type": "string"
+        }
+      ]
+    },
+    "authentication_token": {
+      "fields": [
+        {
+          "name": "token",
+          "type": "string"
+        }
+      ]
+    },
+    "generic_error": {
+      "fields": [
+        {
+          "name": "error_message",
+          "type": "string"
+        }
+      ]
+    },
+    "protected_endpoint": {
+      "plural": "protected_endpoint",
+      "fields": [
+        {
+          "name": "message",
+          "type": "string"
+        }
+      ]
+    },
+    "healthcheck": {
+      "plural": "healthcheck",
+      "description": "Response for the healthcheck's endpoint of the service",
+      "fields": [
+        {
+          "name": "status",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "resources": {
+    "auth": {
+      "operations": [
+        {
+          "method": "GET",
+          "path": "/message",
+          "responses": {
+            "200": {
+              "type": "message"
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/valid",
+          "body": {
+            "type": "authentication_token"
+          },
+          "responses": {
+            "200": {
+              "type": "unit"
+            },
+            "403": {
+              "type": "generic_error"
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "body": {
+            "type": "auth"
+          },
+          "responses": {
+            "200": {
+              "type": "authentication_token"
+            },
+            "403": {
+              "type": "generic_error"
+            }
+          }
+        }
+      ]
+    },
+    "protected_endpoint": {
+      "operations": [
+        {
+          "method": "GET",
+          "responses": {
+            "200": {
+              "type": "protected_endpoint"
+            },
+            "401": {
+              "type": "generic_error"
+            },
+            "403": {
+              "type": "generic_error"
+            }
+          }
+        }
+      ]
+    },
+    "healthcheck": {
+      "description": "healthcheck endpoint",
+      "operations": [
+        {
+          "method": "GET",
+          "responses": {
+            "200": {
+              "type": "healthcheck"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

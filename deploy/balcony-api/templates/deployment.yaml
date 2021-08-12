@@ -1,0 +1,44 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: balcony-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: balcony-api
+  template:
+    metadata:
+      labels:
+        app: balcony-api
+    spec:
+      containers:
+        - name: balcony-api
+          image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+          env:
+            - name: JAVA_OPTS
+              value: "-Dconfig.resource=application.prod.conf"
+            - name: POSTGRES_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: common-env
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: init0-postgresql-ha-postgresql
+                  key: postgresql-password
+          ports:
+            - name: api
+              containerPort: 9000
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: api
+            initialDelaySeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: api
+            initialDelaySeconds: 10

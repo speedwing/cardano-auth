@@ -1,0 +1,9 @@
+code:
+  gimbalabs:
+    cardano-auth:
+      version: latest
+      generators:
+        play_2_x_routes:
+          target: api/conf/routes
+        play_2_x_json:
+          target: api/app/generated/model

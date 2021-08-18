@@ -17,6 +17,7 @@ lazy val api = (project in file("api"))
       "org.postgresql" % "postgresql" % "42.2.20",
       "org.playframework.anorm" %% "anorm" % "2.6.10",
       "org.playframework.anorm" %% "anorm-postgres" % "2.6.10",
+      "com.github.jwt-scala" %% "jwt-play-json" % "8.0.3",
       "com.speedwing" % "lib" % "0.0.1-SNAPSHOT" excludeAll ExclusionRule(organization = "com.fasterxml.jackson.core"),
       "org.scalatestplus.play" %% "scalatestplus-play" % "5.0.0" % Test
     ),

@@ -78,11 +78,8 @@
           }
         },
         {
-          "method": "POST",
+          "method": "GET",
           "path": "/valid",
-          "body": {
-            "type": "authentication_token"
-          },
           "responses": {
             "200": {
               "type": "unit"

@@ -1,11 +1,12 @@
 package services
 
 import blockchain.auth.mech.dev
-import blockchain.auth.mech.dev.{RandomStringGeneration, SigningService}
+import blockchain.auth.mech.dev.{RandomStringGeneration, SigningService, VrfSigningService}
+import io.gimbalabs.cardano.auth.v0.models.{Auth, SignatureType}
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters
 import org.bouncycastle.util.encoders.Hex
 import org.joda.time.DateTime
-import pdi.jwt.{JwtAlgorithm, JwtClaim, JwtJson, JwtTime}
+import pdi.jwt.{JwtAlgorithm, JwtClaim, JwtJson}
 import play.api.libs.json.Json
 import play.api.mvc.Headers
 import play.api.{Configuration, Logging}
@@ -23,6 +24,7 @@ class AuthService @Inject()(configuration: Configuration) extends Logging {
   private val randomStringGenerator = new RandomStringGeneration()
 
   private val signer = new SigningService()
+  private val vrfSigner = new VrfSigningService()
 
   private val Bearer = "Bearer"
 
@@ -56,14 +58,27 @@ class AuthService @Inject()(configuration: Configuration) extends Logging {
     }
   }
 
-  def verify(message: String, signedMessage: String, publicKeyHex: String): Either[String, String] = {
-    val outcome = signer.verify(
-      new dev.Message(message),
-      new dev.Message(Hex.decode(signedMessage)),
-      new Ed25519PublicKeyParameters(Hex.decode(publicKeyHex), 0))
+  def verify(auth: Auth): Either[String, String] = {
+
+    def paymentKeyVerify = signer.verify(
+      new dev.Message(auth.message),
+      new dev.Message(Hex.decode(auth.signedMessage)),
+      new Ed25519PublicKeyParameters(Hex.decode(auth.publicKey), 0))
+
+    def vrfKeyVerify = vrfSigner.verify(
+      new dev.Message(auth.message),
+      new dev.Message(Hex.decode(auth.signedMessage)),
+      Hex.decode(auth.publicKey)
+    )
+
+    val outcome = auth.signatureType match {
+      case SignatureType.Payment => paymentKeyVerify
+      case SignatureType.Vrf => vrfKeyVerify
+      case SignatureType.UNDEFINED(_) => false
+    }
 
     if (outcome) {
-      val claimObj = Json.obj((PublicKey, publicKeyHex))
+      val claimObj = Json.obj((PublicKey, auth.publicKey))
       val expiresInAMonth = DateTime.now().plusMonths(1).getMillis / 1000L
       val claim = JwtClaim(Json.stringify(claimObj)).issuedNow.expiresAt(expiresInAMonth)
       val token = JwtJson.encode(claim, SECRET, JwtAlgo)

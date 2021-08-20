@@ -26,7 +26,7 @@ class Auth @Inject()(authService: AuthService, userAuthenticatedBuilder: UserAut
 
     val auth = req.body
     authService
-      .verify(auth.message, auth.signedMessage, auth.publicKeyHex) match {
+      .verify(auth) match {
       case Right(token) => Ok(Json.toJson(AuthenticationToken(token)))
       case Left(message) => Forbidden(Json.toJson(GenericError(message)))
     }

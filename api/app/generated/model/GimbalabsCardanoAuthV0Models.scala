@@ -5,10 +5,18 @@
  */
 package io.gimbalabs.cardano.auth.v0.models {
 
+  /**
+   * @param message The message to sign, in HEX format
+   * @param signedMessage The signed message, in HEX format
+   * @param signatureType The type of signature used, it can be payment, for wallet/delegation signature,
+   *        vrf for SPOs
+   * @param publicKey The public key used to sign the message, in HEX format
+   */
   final case class Auth(
     message: String,
     signedMessage: String,
-    publicKeyHex: String
+    signatureType: io.gimbalabs.cardano.auth.v0.models.SignatureType,
+    publicKey: String
   )
 
   final case class AuthenticationToken(
@@ -33,6 +41,40 @@ package io.gimbalabs.cardano.auth.v0.models {
   final case class ProtectedEndpoint(
     message: String
   )
+
+  sealed trait SignatureType extends _root_.scala.Product with _root_.scala.Serializable
+
+  object SignatureType {
+
+    case object Payment extends SignatureType { override def toString = "payment" }
+    case object Vrf extends SignatureType { override def toString = "vrf" }
+
+    /**
+     * UNDEFINED captures values that are sent either in error or
+     * that were added by the server after this library was
+     * generated. We want to make it easy and obvious for users of
+     * this library to handle this case gracefully.
+     *
+     * We use all CAPS for the variable name to avoid collisions
+     * with the camel cased values above.
+     */
+    final case class UNDEFINED(override val toString: String) extends SignatureType
+
+    /**
+     * all returns a list of all the valid, known values. We use
+     * lower case to avoid collisions with the camel cased values
+     * above.
+     */
+    val all: scala.List[SignatureType] = scala.List(Payment, Vrf)
+
+    private[this]
+    val byName: Map[String, SignatureType] = all.map(x => x.toString.toLowerCase -> x).toMap
+
+    def apply(value: String): SignatureType = fromString(value).getOrElse(UNDEFINED(value))
+
+    def fromString(value: String): _root_.scala.Option[SignatureType] = byName.get(value.toLowerCase)
+
+  }
 
 }
 
@@ -73,19 +115,55 @@ package io.gimbalabs.cardano.auth.v0.models {
       }
     }
 
+    implicit val jsonReadsCardanoAuthSignatureType = new play.api.libs.json.Reads[io.gimbalabs.cardano.auth.v0.models.SignatureType] {
+      def reads(js: play.api.libs.json.JsValue): play.api.libs.json.JsResult[io.gimbalabs.cardano.auth.v0.models.SignatureType] = {
+        js match {
+          case v: play.api.libs.json.JsString => play.api.libs.json.JsSuccess(io.gimbalabs.cardano.auth.v0.models.SignatureType(v.value))
+          case _ => {
+            (js \ "value").validate[String] match {
+              case play.api.libs.json.JsSuccess(v, _) => play.api.libs.json.JsSuccess(io.gimbalabs.cardano.auth.v0.models.SignatureType(v))
+              case err: play.api.libs.json.JsError =>
+                (js \ "signature_type").validate[String] match {
+                  case play.api.libs.json.JsSuccess(v, _) => play.api.libs.json.JsSuccess(io.gimbalabs.cardano.auth.v0.models.SignatureType(v))
+                  case err: play.api.libs.json.JsError => err
+                }
+            }
+          }
+        }
+      }
+    }
+
+    def jsonWritesCardanoAuthSignatureType(obj: io.gimbalabs.cardano.auth.v0.models.SignatureType) = {
+      play.api.libs.json.JsString(obj.toString)
+    }
+
+    def jsObjectSignatureType(obj: io.gimbalabs.cardano.auth.v0.models.SignatureType) = {
+      play.api.libs.json.Json.obj("value" -> play.api.libs.json.JsString(obj.toString))
+    }
+
+    implicit def jsonWritesCardanoAuthSignatureType: play.api.libs.json.Writes[SignatureType] = {
+      new play.api.libs.json.Writes[io.gimbalabs.cardano.auth.v0.models.SignatureType] {
+        def writes(obj: io.gimbalabs.cardano.auth.v0.models.SignatureType) = {
+          jsonWritesCardanoAuthSignatureType(obj)
+        }
+      }
+    }
+
     implicit def jsonReadsCardanoAuthAuth: play.api.libs.json.Reads[Auth] = {
       for {
         message <- (__ \ "message").read[String]
         signedMessage <- (__ \ "signed_message").read[String]
-        publicKeyHex <- (__ \ "public_key_hex").read[String]
-      } yield Auth(message, signedMessage, publicKeyHex)
+        signatureType <- (__ \ "signature_type").read[io.gimbalabs.cardano.auth.v0.models.SignatureType]
+        publicKey <- (__ \ "public_key").read[String]
+      } yield Auth(message, signedMessage, signatureType, publicKey)
     }
 
     def jsObjectAuth(obj: io.gimbalabs.cardano.auth.v0.models.Auth): play.api.libs.json.JsObject = {
       play.api.libs.json.Json.obj(
         "message" -> play.api.libs.json.JsString(obj.message),
         "signed_message" -> play.api.libs.json.JsString(obj.signedMessage),
-        "public_key_hex" -> play.api.libs.json.JsString(obj.publicKeyHex)
+        "signature_type" -> play.api.libs.json.JsString(obj.signatureType.toString),
+        "public_key" -> play.api.libs.json.JsString(obj.publicKey)
       )
     }
 
@@ -197,6 +275,7 @@ package io.gimbalabs.cardano.auth.v0 {
 
     // import models directly for backwards compatibility with prior versions of the generator
     import Core._
+    import Models._
 
     object Core {
       implicit def pathBindableDateTimeIso8601(implicit stringBinder: QueryStringBindable[String]): PathBindable[_root_.org.joda.time.DateTime] = ApibuilderPathBindable(ApibuilderTypes.dateTimeIso8601)
@@ -204,6 +283,19 @@ package io.gimbalabs.cardano.auth.v0 {
 
       implicit def pathBindableDateIso8601(implicit stringBinder: QueryStringBindable[String]): PathBindable[_root_.org.joda.time.LocalDate] = ApibuilderPathBindable(ApibuilderTypes.dateIso8601)
       implicit def queryStringBindableDateIso8601(implicit stringBinder: QueryStringBindable[String]): QueryStringBindable[_root_.org.joda.time.LocalDate] = ApibuilderQueryStringBindable(ApibuilderTypes.dateIso8601)
+    }
+
+    object Models {
+      import io.gimbalabs.cardano.auth.v0.models._
+
+      val signatureTypeConverter: ApibuilderTypeConverter[io.gimbalabs.cardano.auth.v0.models.SignatureType] = new ApibuilderTypeConverter[io.gimbalabs.cardano.auth.v0.models.SignatureType] {
+        override def convert(value: String): io.gimbalabs.cardano.auth.v0.models.SignatureType = io.gimbalabs.cardano.auth.v0.models.SignatureType(value)
+        override def convert(value: io.gimbalabs.cardano.auth.v0.models.SignatureType): String = value.toString
+        override def example: io.gimbalabs.cardano.auth.v0.models.SignatureType = io.gimbalabs.cardano.auth.v0.models.SignatureType.Payment
+        override def validValues: Seq[io.gimbalabs.cardano.auth.v0.models.SignatureType] = io.gimbalabs.cardano.auth.v0.models.SignatureType.all
+      }
+      implicit def pathBindableSignatureType(implicit stringBinder: QueryStringBindable[String]): PathBindable[io.gimbalabs.cardano.auth.v0.models.SignatureType] = ApibuilderPathBindable(signatureTypeConverter)
+      implicit def queryStringBindableSignatureType(implicit stringBinder: QueryStringBindable[String]): QueryStringBindable[io.gimbalabs.cardano.auth.v0.models.SignatureType] = ApibuilderQueryStringBindable(signatureTypeConverter)
     }
 
     trait ApibuilderTypeConverter[T] {

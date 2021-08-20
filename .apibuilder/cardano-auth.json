@@ -2,6 +2,16 @@
   "name": "cardano-auth",
   "base_url": "https://cardano-auth.mainnet.dandelion.link",
   "enums": {
+    "signature_type": {
+      "values": [
+        {
+          "name": "payment"
+        },
+        {
+          "name": "vrf"
+        }
+      ]
+    }
   },
   "models": {
     "message": {
@@ -17,15 +27,23 @@
       "fields": [
         {
           "name": "message",
-          "type": "string"
+          "type": "string",
+          "description": "The message to sign, in HEX format"
         },
         {
           "name": "signed_message",
-          "type": "string"
+          "type": "string",
+          "description": "The signed message, in HEX format"
         },
         {
-          "name": "public_key_hex",
-          "type": "string"
+          "name": "signature_type",
+          "type": "signature_type",
+          "description": "The type of signature used, it can be payment, for wallet/delegation signature, vrf for SPOs"
+        },
+        {
+          "name": "public_key",
+          "type": "string",
+          "description": "The public key used to sign the message, in HEX format"
         }
       ]
     },

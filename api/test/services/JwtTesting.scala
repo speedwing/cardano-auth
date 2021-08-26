@@ -70,7 +70,7 @@ class JwtTesting extends WordSpec with MustMatchers with OptionValues {
 
     implicit val clock: Clock = Clock.systemUTC
 
-    JwtClaim(Json.obj(("public_key", "asd")))
+//    JwtClaim(Json.obj(("public_key", "asd")))
 
 //    val claim = JwtClaim(notBefore = Some(JwtTime.nowSeconds + 60))
     val claim = JwtClaim("""{"user":1}""", notBefore = Some(JwtTime.nowSeconds + 60)).issuedIn(60).expiresIn(120)

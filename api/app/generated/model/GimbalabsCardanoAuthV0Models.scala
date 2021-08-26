@@ -39,7 +39,7 @@ package io.gimbalabs.cardano.auth.v0.models {
   )
 
   final case class ProtectedEndpoint(
-    message: String
+    message: Seq[String]
   )
 
   sealed trait SignatureType extends _root_.scala.Product with _root_.scala.Serializable
@@ -248,12 +248,12 @@ package io.gimbalabs.cardano.auth.v0.models {
     }
 
     implicit def jsonReadsCardanoAuthProtectedEndpoint: play.api.libs.json.Reads[ProtectedEndpoint] = {
-      (__ \ "message").read[String].map { x => new ProtectedEndpoint(message = x) }
+      (__ \ "message").read[Seq[String]].map { x => new ProtectedEndpoint(message = x) }
     }
 
     def jsObjectProtectedEndpoint(obj: io.gimbalabs.cardano.auth.v0.models.ProtectedEndpoint): play.api.libs.json.JsObject = {
       play.api.libs.json.Json.obj(
-        "message" -> play.api.libs.json.JsString(obj.message)
+        "message" -> play.api.libs.json.Json.toJson(obj.message)
       )
     }
 

@@ -3,6 +3,7 @@ package services
 import blockchain.auth.mech.dev
 import blockchain.auth.mech.dev.{RandomStringGeneration, SigningService, VrfSigningService}
 import io.gimbalabs.cardano.auth.v0.models.{Auth, SignatureType}
+import model.User
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters
 import org.bouncycastle.util.encoders.Hex
 import org.joda.time.DateTime
@@ -24,6 +25,7 @@ class AuthService @Inject()(configuration: Configuration) extends Logging {
   private val randomStringGenerator = new RandomStringGeneration()
 
   private val signer = new SigningService()
+
   private val vrfSigner = new VrfSigningService()
 
   private val Bearer = "Bearer"
@@ -34,13 +36,15 @@ class AuthService @Inject()(configuration: Configuration) extends Logging {
 
   private val PublicKey = "public_key"
 
+  private val KeyType = "key_type"
+
   def getMessage = {
     val randomMessage = randomStringGenerator.createRandomString()
     list.add(randomMessage)
     randomMessage
   }
 
-  def isAuthenticated(headers: Headers): Option[String] = {
+  def isAuthenticated(headers: Headers): Option[User] = {
     headers
       .get("Authorization") match {
       case Some(value) if value.startsWith(Bearer) =>
@@ -49,8 +53,11 @@ class AuthService @Inject()(configuration: Configuration) extends Logging {
           JwtJson
             .decodeJson(token, SECRET, List(JwtAlgo))
             .toOption
-            .map(claims => claims \ "public_key")
-            .map(_.as[String])
+            .map { claims =>
+              val publicKey = (claims \ PublicKey).as[String]
+              val keyType = (claims \ KeyType).as[String]
+              User(publicKey, SignatureType(keyType))
+            }
         } else {
           None
         }
@@ -78,7 +85,7 @@ class AuthService @Inject()(configuration: Configuration) extends Logging {
     }
 
     if (outcome) {
-      val claimObj = Json.obj((PublicKey, auth.publicKey))
+      val claimObj = Json.obj((PublicKey, auth.publicKey), (KeyType, auth.signatureType.toString))
       val expiresInAMonth = DateTime.now().plusMonths(1).getMillis / 1000L
       val claim = JwtClaim(Json.stringify(claimObj)).issuedNow.expiresAt(expiresInAMonth)
       val token = JwtJson.encode(claim, SECRET, JwtAlgo)

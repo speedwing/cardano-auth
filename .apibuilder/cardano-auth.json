@@ -68,7 +68,7 @@
       "fields": [
         {
           "name": "message",
-          "type": "string"
+          "type": "[string]"
         }
       ]
     },
